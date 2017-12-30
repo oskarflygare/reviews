@@ -1,0 +1,74 @@
+---
+title: "2017-annual-review"
+author: "Oskar Flygare"
+date: '2017-12-30'
+output:
+  html_document:
+    toc: yes
+    toc_depth: '3'
+    code_folding: show
+    theme: flatly
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Load packages
+
+```{r packages, message=FALSE, warning=FALSE}
+
+library(tidyverse)
+library(plyr)
+library(googlesheets)
+library(stringr)
+
+```
+
+# Read data
+
+```{r read-data, message=FALSE, warning=FALSE}
+review_2017 <- gs_title("2017 review")
+
+q1 <- review_2017 %>%
+  gs_read(ws = "Q1",
+          range = cell_rows(1:7))
+
+q2 <- review_2017 %>%
+  gs_read(ws = "Q2",
+          range = cell_rows(1:7))
+
+q3 <- review_2017 %>%
+  gs_read(ws = "Q3",
+          range = cell_rows(1:7))
+
+q4 <- review_2017 %>%
+  gs_read(ws = "Q4",
+          range = cell_rows(1:7))
+```
+
+# Merge and wrangle data
+
+```{r merge-wrangle}
+df_2017 <- join_all(
+  list(q1, q2, q3, q4),
+  by = "Goal",
+  type = "full") %>%
+  gather(week, value, -Goal)
+
+df_2017$value <- str_replace_all(df_2017$value, "%", "")
+df_2017$value <- as.integer(df_2017$value)
+
+df_2017$week <- str_replace_all(df_2017$week, "w", "")
+df_2017$week <- as.integer(df_2017$week)
+```
+
+# Plotting
+
+```{r plot}
+
+lineplot <- ggplot(df_2017, aes(x = week, y = value)) + geom_line()
+
+lineplot + facet_grid(. ~ Goal)
+```
