@@ -33,19 +33,19 @@ review_2017 <- gs_title("2017 review")
 
 q1 <- review_2017 %>%
   gs_read(ws = "Q1",
-          range = cell_rows(1:7))
+          range = "B15:E21")
 
 q2 <- review_2017 %>%
   gs_read(ws = "Q2",
-          range = cell_rows(1:7))
+          range = "B12:E18")
 
 q3 <- review_2017 %>%
   gs_read(ws = "Q3",
-          range = cell_rows(1:7))
+          range = "B11:E17")
 
 q4 <- review_2017 %>%
   gs_read(ws = "Q4",
-          range = cell_rows(1:7))
+          range = "B11:E17")
 ```
 
 # Merge and wrangle data
@@ -55,20 +55,43 @@ df_2017 <- join_all(
   list(q1, q2, q3, q4),
   by = "Goal",
   type = "full") %>%
-  gather(week, value, -Goal)
+  gather(month, value, -Goal)
 
 df_2017$value <- str_replace_all(df_2017$value, "%", "")
 df_2017$value <- as.integer(df_2017$value)
 
-df_2017$week <- str_replace_all(df_2017$week, "w", "")
-df_2017$week <- as.integer(df_2017$week)
+df_2017 <- mutate(df_2017, month = fct_recode(month,
+                                                  "1" = "January",
+                                                  "2" = "February",
+                                                  "3" = "March",
+                                                  "4" = "April",
+                                                  "5" = "May",
+                                                  "6" = "June",
+                                                  "7" = "July",
+                                                  "8" = "August",
+                                                  "9" = "September",
+                                                  "10" = "October",
+                                                  "11" = "November",
+                                                  "12" = "December"))
+df_2017 <- df_2017 %>%
+  mutate(month = factor(month, levels = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12)))
+  
 ```
 
 # Plotting
 
 ```{r plot}
+lineplot <- df_2017 %>%
+  filter(!Goal %in% "Top 3") %>%
+  ggplot(aes(x = month, y = value, group = Goal)) + geom_point() + geom_line(group = 1) +
+  labs(title = "Goal fulfillment",
+       subtitle = "Month by month 2017",
+       y = "Percent",
+       x = " ") +
+  theme_classic() +
+  facet_grid(. ~ Goal)
 
-lineplot <- ggplot(df_2017, aes(x = week, y = value)) + geom_line()
+lineplot
 
-lineplot + facet_grid(. ~ Goal)
+ggsave("goals2017.png", width = 5, height = 3)
 ```
