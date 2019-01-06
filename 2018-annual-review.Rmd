@@ -1,0 +1,51 @@
+---
+title: "2018-annual-review"
+author: "Oskar Flygare"
+date: "1/6/2019"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+library(googledrive)
+library(hrbrthemes)
+extrafont::loadfonts()
+```
+
+```{r}
+drive_download("2018_review", type = "csv")
+```
+
+```{r}
+data_2018 <- read.csv("2018_review.csv")
+```
+
+```{r}
+data_2018 <- data_2018 %>%
+  gather(outcome, value, writing:reading) %>%
+  select(-c(three_goals, three_plus, three_minus)) %>%
+  group_by(month, outcome) %>%
+  summarise(avg = mean(value))
+
+```
+
+```{r}
+gg_2018 <- data_2018 %>%
+  ungroup() %>%
+  mutate(month = factor(month, levels = c("jan", "feb", "mar", "apr", "may",
+                                   "jun", "jul", "aug", "sep", "oct",
+                                   "nov", "dec"))) %>%
+  ggplot(aes(x = month, y = avg, group = outcome, colour = outcome)) +
+  geom_line() +
+  facet_wrap(~outcome, ncol = 3) +
+  theme_ipsum() +
+  labs(title = "Goal fulfillment",
+       subtitle = "Month by month in 2018") +
+  scale_y_continuous(limits = c(0,100), breaks = seq(0, 100, 20)) +
+  theme(axis.text.x = element_blank())
+
+gg_2018
+
+ggsave("gg_2018.pdf", gg_2018, device = cairo_pdf, width = 8, height = 8*0.618)
+```
+
