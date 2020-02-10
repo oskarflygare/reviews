@@ -1,0 +1,50 @@
+---
+title: "2019-annual-review"
+author: "Oskar Flygare"
+date: "2/10/2020"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+library(hrbrthemes)
+extrafont::loadfonts()
+```
+
+```{r}
+data_2019 <- read.csv("2019_review.csv")
+```
+
+```{r}
+data_2019 <- data_2019 %>%
+  select(-Note,
+         -week,
+         -Week_avg) %>% 
+  pivot_longer(-month,
+               names_to = "outcome") %>% 
+  group_by(month, outcome) %>% 
+  summarise(avg = mean(value, na.rm = TRUE))
+
+```
+
+```{r}
+gg_2019 <- data_2019 %>%
+  ungroup() %>%
+  mutate(month = factor(month, levels = c("January", "February", "March", "April", "May",
+                                   "June", "July", "August", "September", "October",
+                                   "November", "December"))) %>%
+  ggplot(aes(x = month, y = avg, group = outcome, colour = outcome)) +
+  geom_line() +
+  facet_wrap(~outcome, ncol = 3) +
+  theme_ipsum() +
+  labs(title = "Goal fulfillment",
+       subtitle = "Month by month in 2019") +
+  scale_y_continuous(limits = c(0,100), breaks = seq(0, 100, 20)) +
+  theme(axis.text.x = element_blank())
+
+gg_2019
+
+ggsave("gg_2019.pdf", gg_2019, device = cairo_pdf, width = 8, height = 8*0.618)
+```
+
+
